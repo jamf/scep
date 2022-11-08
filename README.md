@@ -1,19 +1,14 @@
 # scep
 
-[![CI](https://github.com/micromdm/scep/workflows/CI/badge.svg)](https://github.com/micromdm/scep/actions)
-[![Go Reference](https://pkg.go.dev/badge/github.com/micromdm/scep/v2.svg)](https://pkg.go.dev/github.com/micromdm/scep/v2)
+[![CI](https://github.com/jamf/scep/workflows/CI/badge.svg)](https://github.com/jamf/scep/actions)
 
 `scep` is a Simple Certificate Enrollment Protocol server and client
-
-## Installation
-
-Binary releases are available on the [releases page](https://github.com/micromdm/scep/releases).
 
 ### Compiling from source
 
 To compile the SCEP client and server you will need [a Go compiler](https://golang.org/dl/) as well as standard tools like git, make, etc.
 
-1. Clone the repository and get into the source directory: `git clone https://github.com/micromdm/scep.git && cd scep`
+1. Clone the repository and get into the source directory: `git clone https://github.com/jamf/scep.git && cd scep`
 2. Compile the client and server binaries: `make`
 
 The binaries will be compiled in the current directory and named after the architecture. I.e. `scepclient-linux-amd64` and `scepserver-linux-amd64`.
@@ -180,10 +175,8 @@ docker run -it --rm -v /path/to/ca/folder:/depot -p 8080:8080 micromdm/scep:late
 The core `scep` library can be used for both client and server operations.
 
 ```
-go get github.com/micromdm/scep/scep
+go get github.com/jamf/scep/scep
 ```
-
-For detailed usage, see the [Go Reference](https://pkg.go.dev/github.com/micromdm/scep/v2/scep).
 
 Example (server):
 
