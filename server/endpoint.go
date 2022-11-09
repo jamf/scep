@@ -23,8 +23,9 @@ const (
 )
 
 type Endpoints struct {
-	GetEndpoint  endpoint.Endpoint
-	PostEndpoint endpoint.Endpoint
+	GetEndpoint    endpoint.Endpoint
+	PostEndpoint   endpoint.Endpoint
+	HealthEndpoint endpoint.Endpoint
 
 	mtx          sync.RWMutex
 	capabilities []byte

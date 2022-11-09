@@ -1,10 +1,14 @@
-FROM alpine:3
+FROM alpine:latest
 
-COPY ./scepclient-linux-amd64 /usr/bin/scepclient
+RUN adduser scep --uid 1010 --disabled-password --gecos ""
+
 COPY ./scepserver-linux-amd64 /usr/bin/scepserver
+RUN chown scep:scep /usr/bin/scepserver
 
 EXPOSE 8080
 
 VOLUME ["/depot"]
+
+USER scep
 
 ENTRYPOINT ["scepserver"]

@@ -1,2 +1,5 @@
 scepserver-*
 scepclient-*
+*.key
+*.pem
+index.txt
