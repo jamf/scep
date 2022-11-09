@@ -36,8 +36,15 @@ func MakeHTTPHandler(e *Endpoints, svc Service, logger kitlog.Logger) http.Handl
 		encodeSCEPResponse,
 		opts...,
 	))
+	r.Methods("GET").Path("/health").HandlerFunc(healthEndpointHandler)
 
 	return r
+}
+
+func healthEndpointHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	data := []byte(`{"status": "UP"}`)
+	w.Write(data)
 }
 
 // EncodeSCEPRequest encodes a SCEP HTTP Request. Used by the client.
