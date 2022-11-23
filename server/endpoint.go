@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/go-kit/log"
 	"github.com/pkg/errors"
 )
 
@@ -23,9 +23,8 @@ const (
 )
 
 type Endpoints struct {
-	GetEndpoint    endpoint.Endpoint
-	PostEndpoint   endpoint.Endpoint
-	HealthEndpoint endpoint.Endpoint
+	GetEndpoint  endpoint.Endpoint
+	PostEndpoint endpoint.Endpoint
 
 	mtx          sync.RWMutex
 	capabilities []byte

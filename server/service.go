@@ -7,6 +7,8 @@ import (
 	"errors"
 
 	"github.com/micromdm/scep/v2/scep"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/go-kit/kit/log"
 )
@@ -53,30 +55,51 @@ type service struct {
 	debugLogger log.Logger
 }
 
+var (
+	getCaCapsCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "scep_get_ca_caps_count",
+		Help: "The number of processed scep operations, divided by operation and status",
+	}, []string{"result"})
+	getCaCertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "scep_get_ca_cert_count",
+		Help: "The number of processed scep operations, divided by operation and status",
+	}, []string{"result"})
+	pkiOperationsCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "scep_pki_operations_count",
+		Help: "The number of processed scep operations, divided by operation and status",
+	}, []string{"result"})
+)
+
 func (svc *service) GetCACaps(ctx context.Context) ([]byte, error) {
 	defaultCaps := []byte("Renewal\nSHA-1\nSHA-256\nAES\nDES3\nSCEPStandard\nPOSTPKIOperation")
+	getCaCapsCounter.WithLabelValues("SUCCESS").Inc()
 	return defaultCaps, nil
 }
 
 func (svc *service) GetCACert(ctx context.Context, _ string) ([]byte, int, error) {
 	if svc.crt == nil {
+		getCaCertCounter.WithLabelValues("ERROR").Inc()
 		return nil, 0, errors.New("missing CA certificate")
 	}
 	if len(svc.addlCa) < 1 {
+		getCaCertCounter.WithLabelValues("ERROR").Inc()
 		return svc.crt.Raw, 1, nil
 	}
 	certs := []*x509.Certificate{svc.crt}
 	certs = append(certs, svc.addlCa...)
 	data, err := scep.DegenerateCertificates(certs)
+	getCaCertCounter.WithLabelValues("SUCCESS").Inc()
 	return data, len(svc.addlCa) + 1, err
 }
 
 func (svc *service) PKIOperation(ctx context.Context, data []byte) ([]byte, error) {
 	msg, err := scep.ParsePKIMessage(data, scep.WithLogger(svc.debugLogger))
 	if err != nil {
+		pkiOperationsCounter.WithLabelValues("ERROR").Inc()
 		return nil, err
 	}
 	if err := msg.DecryptPKIEnvelope(svc.crt, svc.key); err != nil {
+		pkiOperationsCounter.WithLabelValues("ERROR").Inc()
 		return nil, err
 	}
 
@@ -87,10 +110,12 @@ func (svc *service) PKIOperation(ctx context.Context, data []byte) ([]byte, erro
 	if err != nil {
 		svc.debugLogger.Log("msg", "failed to sign CSR", "err", err)
 		certRep, err := msg.Fail(svc.crt, svc.key, scep.BadRequest)
+		pkiOperationsCounter.WithLabelValues("ERROR").Inc()
 		return certRep.Raw, err
 	}
 
 	certRep, err := msg.Success(svc.crt, svc.key, crt)
+	pkiOperationsCounter.WithLabelValues("SUCCESS").Inc()
 	return certRep.Raw, err
 }
 
