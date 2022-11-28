@@ -1,0 +1,26 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - "*.*.*"
+
+jobs:
+  release-binary:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.19.x
+    - name: Checkout the latest code
+      uses: actions/checkout@v3
+    - name: Build
+      shell: bash
+      run: make release
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          scepserver-.*.zip
+          scepclient-.*.zip
