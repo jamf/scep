@@ -6,15 +6,18 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
+
 	"net/http"
 	"net/url"
 
-	kitlog "github.com/go-kit/kit/log"
 	kithttp "github.com/go-kit/kit/transport/http"
+	kitlog "github.com/go-kit/log"
 	"github.com/gorilla/mux"
 	"github.com/groob/finalizer/logutil"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func MakeHTTPHandler(e *Endpoints, svc Service, logger kitlog.Logger) http.Handler {
@@ -37,6 +40,7 @@ func MakeHTTPHandler(e *Endpoints, svc Service, logger kitlog.Logger) http.Handl
 		opts...,
 	))
 	r.Methods("GET").Path("/health").HandlerFunc(healthEndpointHandler)
+	r.Methods("GET").Path("/metrics").Handler(promhttp.Handler())
 
 	return r
 }
@@ -119,19 +123,28 @@ func message(r *http.Request) ([]byte, error) {
 		}
 		return []byte(msg), nil
 	case "POST":
-		return ioutil.ReadAll(io.LimitReader(r.Body, maxPayloadSize))
+		return io.ReadAll(io.LimitReader(r.Body, maxPayloadSize))
 	default:
 		return nil, errors.New("method not supported")
 	}
 }
 
+var (
+	opsProcessed = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "scep_requests_count",
+		Help: "The number of processed scep operations, divided by operation and status",
+	}, []string{"operation", "result"})
+)
+
 // EncodeSCEPResponse writes a SCEP response back to the SCEP client.
 func encodeSCEPResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	resp := response.(SCEPResponse)
 	if resp.Err != nil {
+		opsProcessed.WithLabelValues(resp.operation, "ERROR").Inc()
 		http.Error(w, resp.Err.Error(), http.StatusInternalServerError)
 		return nil
 	}
+	opsProcessed.WithLabelValues(resp.operation, "SUCCESS").Inc()
 	w.Header().Set("Content-Type", contentHeader(resp.operation, resp.CACertNum))
 	w.Write(resp.Data)
 	return nil
@@ -140,13 +153,13 @@ func encodeSCEPResponse(ctx context.Context, w http.ResponseWriter, response int
 // DecodeSCEPResponse decodes a SCEP response
 func DecodeSCEPResponse(ctx context.Context, r *http.Response) (interface{}, error) {
 	if r.StatusCode != http.StatusOK && r.StatusCode >= 400 {
-		body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 4096))
+		body, _ := io.ReadAll(io.LimitReader(r.Body, 4096))
 		return nil, fmt.Errorf("http request failed with status %s, msg: %s",
 			r.Status,
 			string(body),
 		)
 	}
-	data, err := ioutil.ReadAll(io.LimitReader(r.Body, maxPayloadSize))
+	data, err := io.ReadAll(io.LimitReader(r.Body, maxPayloadSize))
 	if err != nil {
 		return nil, err
 	}

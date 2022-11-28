@@ -3,3 +3,5 @@ scepclient-*
 *.key
 *.pem
 index.txt
+
+.vscode

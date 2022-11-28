@@ -20,6 +20,23 @@ import (
 	kitlog "github.com/go-kit/kit/log"
 )
 
+func TestMetrics(t *testing.T) {
+	server, _, teardown := newServer(t)
+	defer teardown()
+	url := server.URL + "/metrics"
+	resp, err := http.Get(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Error("expected", http.StatusOK, "got", resp.StatusCode)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "go_threads") {
+		t.Error("Response body does not contain go_threads metric.")
+	}
+}
+
 func TestHealth(t *testing.T) {
 	server, _, teardown := newServer(t)
 	defer teardown()
