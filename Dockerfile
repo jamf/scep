@@ -1,5 +1,7 @@
 FROM alpine:latest
 
+# Below line allows for using binary built in ubuntu (ie: GitHub Actions) to run on alpine
+RUN apk add --no-cache libc6-compat
 RUN adduser scep --uid 1010 --disabled-password --gecos ""
 
 COPY ./scepserver-linux-amd64 /usr/bin/scepserver
