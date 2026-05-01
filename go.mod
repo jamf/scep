@@ -1,6 +1,6 @@
 module github.com/micromdm/scep/v2
 
-go 1.19
+go 1.26.2
 
 require (
 	github.com/boltdb/bolt v1.3.1
@@ -20,7 +20,7 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 )
 
 require (
